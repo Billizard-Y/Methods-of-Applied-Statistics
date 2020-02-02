@@ -1,0 +1,157 @@
+---
+title: "STA442 HW2"
+author: "Depeng Ye 1002079500"
+date: "05/10/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(nlme)
+library(Pmisc)
+library(ggplot2)
+library(tseries)
+library(nortest)
+```
+
+# 1. Math
+## Introduction
+The MathAchieve dataset comes from the MEMSS package has 7185 observations (students) on 6 catagories of information including "School", "Minority", "Sex", "SES", "MathAch". and "MEANSES". This dataset was collected to analysis how well the students will perform in their Math Achievement considering the 5 investigated aspects. The study was designed and performed with the hypothesis that the factor "School" is a random effect when fitting a model of students' Mathematics Achievement with "Sex", "Minority", and "SES" as fixed effects. Namely, our study is trying to investigate the reliability of the statement: different students from identical schools have a substantial distinguish in Math Avhievements. The assumptions are that "Minority" (levels yes or no) is factor, "SES"(socio-economic status) is fixed effect, and we could also consider "Sex" as a fixed effect.
+
+## Method
+We want to fit a linear mixed effect model, which regards school as a random effect, to see how the result of such random model tells us.  
+Before fitting a linear mixed effect model, we need to test the normality. Two normality tests (Jarque-Bera Test and Anderson-Darling test) was performed in the appendix. Both of the p-value were less than $2.2 \times 10^{-16}$ which is significant enough to say that "MathAch" follows normal distribution.  
+The method used to fit the model is the lme function in the nlme package. We are fitting a model of "MathAch" regarding factor "Minority" and variable "SES" to see how significnat the influence of "school". The mathematical formula of the model is provided as follows:
+$$Y_{ij} = X_{ij}\beta_i + U_i + Z_{ij}$$
+where $Y_{ij}$ refers to "MathAch"; $X_{ij}$ refers to fixed effect "Minority", "SES" and "Sex" with coefficients $\beta_i$; $U_i \sim N(0, \sigma^2)$ is the random effect "School"; and $Z_{ij}$ refers to random error. All vectors are three dimensional.
+
+## Result
+Results of the linear mixed effect model has been attached to the appendix. Based on the result, we want to determine whether or not "School" is a random effect. Hence we want to compare the variance of students' Math Achievements within and across schools. According to Table 2, the variance of students' Math Achievement within the same school (represented by $\sigma$) is approximately 5.99 while the variance between different schools (represented by $\tau$) is 1.91. It is obvious that the variance of Math Achievements within schools is significantly higher than the variance of students' Math Achievement between different schools. A plot of the fitted model is attached, though it might seem messy and not quite useful. 
+
+## Conclusion
+Considering the results of data analyzed in the section above, we could draw a conclusion that there is a substantial volatility in Math Achievement within school than between different schools. Hence, it is a proper approach to make factor "School" as a random effect in this study we have performed. 
+
+
+
+
+## Appendix: Code, Tables and Plots
+```{r, Echo = T}
+data("MathAchieve", package = "MEMSS")
+knitr::kable(head(MathAchieve), caption = "Overview of MathAchieve Data")
+
+#Normality Testing
+jarque.bera.test(MathAchieve$MathAch)
+ad.test(MathAchieve$MathAch)
+
+#Fit the LME and print the summary
+MathFit = lme(MathAch ~ Minority + SES + Sex, random = ~1|School, method = "REML",
+              data = MathAchieve)
+knitr::kable(Pmisc::lmeTable(MathFit), digits = 3, caption = "Summary of Linear 
+             Mixed Effect Model")
+```
+
+
+```{r, echo = F, warning = F}
+ggplot(MathAchieve, aes(x = SES, y = MathAch, color = School)) + 
+  geom_point(size = 0.1) + 
+  geom_line(aes(y = predict(MathFit), group = Sex, size = "Sex"), size = 0.2) + 
+  theme(legend.position = "none") + 
+  labs(title = "Plot of Mixed Effect Model", y= "Math Achievement") + xlim(-2.6, 1.8)
+```
+
+
+\newpage
+# 2. Drug
+
+## Introduction 
+source: https://www.icpsr.umich.edu/icpsrweb/ICPSR/studies/35074  
+We are having a dataset TEDS-D(Treatment Epiode Data Set - Discharge), which is a national census data system of annual discharges from absuse treatment facilities throughout the U.S. It provides annual data on the number and characteristic of persons discharged from public and private substance abuse treatment programs that received public fundings. This data has 422478 observations of 9 variables including "completed", "SUB1"(the type of drug taken), "GENDER", "AGE", "STFIPS"(the state subject is located in), "raceEthnicity", "homeless", EDUC"(education), and "TOWN".   
+Our first goal is to investigate the validity of two statements, the first one is: " the chance of a young person completing their drug treatment depends on the substance the individual is addicted to, with ‘hard’ drugs (Heroin, Opiates, Methamphetamine, Cocaine) being more difficult to treat than alcohol or marijuana".  The second statement is: "Some American states have particularly effective treatment programs whereas other states have programs which are highly problematic with very low completion rates."  
+
+## Method
+Generally INLA is used to measure how well the two statements are made. We processed the "completed" variable of the data using 1 for TRUE and 0 for FALSE, labled the new column "y".
+
+**First statement: **
+Want to test whether harder drugs are harder to treat than alcohol and marijuana. We use log-odds: $$\log\frac{\mu}{1-\mu} = \sum_{j = 1}^{5} X_{ij}\beta_j$$. Fitted the model using INLA package: fitting a model ires1 of "y" with respect to fixed effect "GENDER", "AGE", "raceEthniity", and "SUB1", and random effect "STFIPS". INLA model is $$logit(\lambda_{it}) = \eta_{it} = X_{it}\beta + U_i$$ where $U_i$ is the random effect STFIPS (i.e. states) and $X_{it}\beta$s are refering to different drug the subjects are addicted to. The prior used in this INLA model is $c(0.1,0.05)$ which is given in the instruction of this assignment. 
+
+**Second statement: **
+In the second statement there are two random effects: "STFIPS" (states) and "TOWN". Hence we need to fit a INLA model with two random effects. In the appendix we have fixed a INLA named ires2 with the same fixed effect as before in ires1, but two Random effects "STFIPS" and "TOWN". THe INLA model is $logit(\lambda_{it}) = \eta_{it} = X_{it}\beta + U_i + V_i$ where $U_i$ is the random effect STFIPS, and $V_i$ refers to the random effect TOWN. We used the penalized complexity prior of $c(0.77, 0.05)$ for a proper fit meaning that $P(\sigma_u > 0.77) = 0.05$. A table inlcuding informations of the effect of drug treatment in each states were included as Table7 in the Appendix. 
+
+## Result
+**First statement:** With the fitted INLA model ires1 we generated Table 6 as the summary of posterior means and quantiles for model parameters. Because Marijuana is used as a reference group, then 0.5 quantile of Marijuana is 1. Also notice that alcohol and marijuana have the 0.5 quantile greater than or equal to 1 while others are less than 1. As a result, the odds of successfully treat a subject addicted to alcohol or marijuana will be a lot higher than successful treatment done on any people who is addicted to "harder" drugs.  
+
+**Second statement:** Based on Table 7, there are different means in different states. For example, in states like Alabama, Colorado, Texas, Utah, etc. the mean of the effect is positive. While in states like Nevada, New Mexico, Virginia, Michigan, etc. the average effect is negative. It is also worth to mention that there are some states, for example, Alaska, Wisconsin, Mississippi, etc. the mean effect of drug treatment is zero. 
+
+## Conclusion
+**First statemnt: ** It is easy to conclude from the table and the analysis in the **Result** part that Alcohol and Marijuana are two kind os addiction that are a lot easier to get rid of when proper treatment has been applied. The other "hard" drugs when compared to these two, are more difficult to treat.  
+
+**Second statement:** Based on the mean of effects that are illustrated in the **Result** section, it is safe for us to conclude that some states in the U.S. are having effective treatment programs while others might not be so effective. Even further, there are states that are having negatively effective treatment programs which leads to an increase in the involved population of drug abuse. Some actions need to be done to fix such problem in the future. 
+
+## Appendix: Code, Tables and Plots
+```{r, echo = T}
+xSub = readRDS("drugs.rds")
+
+knitr::kable(table(xSub$SUB1), caption = "Overview of variable SUB1")
+knitr::kable(table(xSub$STFIPS)[1:5], caption = "Overview of variable STFIPS")
+knitr::kable(table(xSub$TOWN)[1:2], caption = "Overview of variable TOWN")
+
+forInla = na.omit(xSub)
+forInla$y = as.numeric(forInla$completed)
+
+library("INLA")
+
+ires1 = inla(y ~ SUB1 + GENDER + raceEthnicity + homeless + AGE +
+              f(STFIPS, hyper=list(prec=list(
+                prior='pc.prec', param=c(0.1, 0.05)))) +
+              f(TOWN),
+            data=forInla, family='binomial',
+            control.inla = list(strategy='gaussian', int.strategy='eb'),
+            control.family = list(link = "logit"))
+
+
+sdState = Pmisc::priorPostSd(ires1)
+par(mar = rep(2,4))
+do.call(matplot, sdState$STFIPS$matplot)
+do.call(legend, sdState$legend)
+
+
+ires2 = inla(y ~ SUB1 + GENDER + raceEthnicity + homeless + AGE +
+              f(STFIPS, hyper=list(prec=list(
+                prior='pc.prec', param=c(0.77, 0.05)))) + 
+              f(TOWN,hyper=list(prec=list(
+                prior='pc.prec', param=c(0.77, 0.05)))), 
+            data=forInla, family='binomial', 
+            control.inla = list(strategy='gaussian', int.strategy='eb'), 
+            control.family = list(link = "logit"))
+
+sdState1 = Pmisc::priorPostSd(ires2)
+do.call(matplot, sdState1$TOWN$matplot)
+do.call(legend, sdState1$legend)
+
+
+toPrint = as.data.frame(rbind(exp(ires1$summary.fixed[,
+                                                     c(4, 3, 5)]), 
+                              sdState$summary[, c(4, 3, 5)]))
+sss = "^(raceEthnicity|SUB1|GENDER|homeless|SD)(.[[:digit:]]+.[[:space:]]+| for )?"
+
+toPrint = cbind(variable = gsub(paste0(sss, ".*"), "\\1", 
+                                rownames(toPrint)), category = 
+                  substr(gsub(sss, "", rownames(toPrint)), 1, 25), toPrint)
+Pmisc::mdTable(toPrint, digits = 3, mdToTex = TRUE, 
+               guessGroup = TRUE, 
+               caption = "Posterior means and quantiles for model parameters.")
+
+ires1$summary.random$STFIPS$ID = gsub("[[:punct:]]|[[:digit:]]",
+                                     "", ires1$summary.random$STFIPS$ID)
+ires1$summary.random$STFIPS$ID = gsub("DISTRICT OF COLUMBIA", 
+                                     "WASHINGTON DC", ires1$summary.random$STFIPS$ID)
+toprint = cbind(ires1$summary.random$STFIPS[1:26, c(1, 2, 4, 6)], 
+                ires1$summary.random$STFIPS[-(1:26), c(1, 2, 4, 6)])
+
+colnames(toprint) = gsub("uant", "", colnames(toprint))
+knitr::kable(toprint, digits = 1, format = "latex", 
+             caption = "means and quantiles of random effect STFIPS (State)")
+```
+
+
+

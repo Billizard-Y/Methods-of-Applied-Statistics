@@ -28,7 +28,7 @@ where $Y_{ij}$ refers to "MathAch"; $X_{ij}$ refers to fixed effect "Minority", 
 ## Result
 Results of the linear mixed effect model has been attached to the appendix. Based on the result, we want to determine whether or not "School" is a random effect. Hence we want to compare the variance of students' Math Achievements within and across schools. According to Table 2, the variance of students' Math Achievement within the same school (represented by $\sigma$) is approximately 5.99 while the variance between different schools (represented by $\tau$) is 1.91. It is obvious that the variance of Math Achievements within schools is significantly higher than the variance of students' Math Achievement between different schools. A plot of the fitted model is attached, though it might seem messy and not quite useful. 
 
-## Conclusion
+## Conclusion 
 Considering the results of data analyzed in the section above, we could draw a conclusion that there is a substantial volatility in Math Achievement within school than between different schools. Hence, it is a proper approach to make factor "School" as a random effect in this study we have performed. 
 
 

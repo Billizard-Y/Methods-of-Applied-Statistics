@@ -1,0 +1,194 @@
+---
+title: "STA442 HW1"
+author: "Depeng Ye 1002079500"
+date: '2019-09-18'
+output: pdf_document
+---
+
+```{r setup, echo = FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+library(knitr)
+library(faraway)
+library(kableExtra)
+library(ggplot2)
+```
+# 1 \ Flies
+
+## Short Report
+Through the investigation of the data set, we can conclude that the length of thorax of a fruitfly has effect on its lifetime. 
+
+The data was collected from an experiment of 125 male fruitflies that were divided into 5 groups of equal size. Within the 5 groups, there is one solidary group, one given 1 virgin female per day, one given 8 virgin female per day, one given 1 pregnant female per day, the last one is given 8 pregnant female per day. All five groups were labeled many, isolated, one, low, and high, correspondingly where:
+
+isolated = fly with no female fruitflies given  
+one = fly kept with one pregnant fruitfly  
+low = fly kept with one virgin female fruitfly  
+many = fly kept with eight pregnant fruitflies  
+high = fly kept with eight virgin fruitflies    
+
+The above experiment is designed and recorded in Faraway(2005).
+
+The dataset includes 124 observations of 3 variables: thorax, longevity, and activity. Note that there is one subejct missing in the 'many' group while all other groups having 25 observations.  
+Ploting the histogram of the longevity and the thorax of the subject fruitflies. Notice that the longevity is likely normally distributed, while the thorax is left-screwed. Try to refine the data of thorax so that it is normalized (refined_thorax).
+$$x_{norm} = \frac{x_i - \bar{x}}{\sigma_x}$$
+Notice that the shape of histogram of subjects' longevity has a shape of Gamma distribution. Try to fit a gamma generalized linear model (MyFit) to longevity as a function of refined thorax and activity. Plot the GLM into the histogram of longevity can be found in the appendix as well. The mathematical description of the model is shown below:
+$$X \sim Gamma(\phi, \nu)$$
+$$f(x; \phi, \nu)= \frac{(x/\phi)x^{\nu - 1}e^{-x/\phi}}{\Gamma(\nu)\phi}$$
+$$log(\mu_i) = X_i \beta$$
+where $\phi = \frac{\mu_i}{\nu}$ is $scale = 2.12$ and $\nu$ is $shape =  28.43$ in my model fitted.
+
+## Summary
+By looking at the significance level of coefficients of MyFit, we can draw a conclusion: 
+Considering the fruitfly data that has been collected and investigated, there is a significant link that the lifetime of a male fruitfly is correlated with the length of its thorax. 
+When it comes to activity level, different levels of activity are having different effect to the life time. 
+
+$\bullet$ Isolated group shows a same level of significance as the length of thorax, meaning the control group is successful.  
+$\bullet$ One group with shows no significant relation to fruitflies' lifetime.  
+$\bullet$ Low group has a 95% confidence level that at this level of activity, note from the boxplot of longevity in each group, as well as the estimate of coefficient, the effect is negative.  
+$\bullet$ Many group again has no significant effect on he life time of fruitflies' lifetime.  
+$\bullet$ High group has a 99.9% conficence level that it has a strong negative effect on fruitflies' longevity.  
+
+
+\newpage
+## Code Appendix for Question 1
+```{r echo=TRUE, warning=FALSE}
+# Calling fruitfly data from pkg faraway
+data('fruitfly', package = 'faraway')
+# Summary of data
+knitr::kable(summary(fruitfly), format = 'latex', align = 'c', digits = 2, 
+              caption = 'Summary of fruitfly data')
+# Histogram of longevity 
+ggplot(fruitfly, aes(x = longevity)) +
+  geom_histogram(aes(y = ..density..), col = '#EB9605', fill = '#FFBF00', binwidth = 5) +
+  labs(title = "Hist of Longevity in fruitfly")
+# Histogram of thorax length
+ggplot(fruitfly, aes(x = thorax)) + 
+  geom_histogram(aes(y = ..density..), 
+                 col = '#008080', fill = '#9FD5D1', binwidth = 0.03) +
+    labs(title = "Hist of Thorax Length in fruitfly")
+#Plot of activity level vs longevity
+ggplot(fruitfly, aes(x = activity, y = longevity)) +
+  geom_boxplot(col = '#FA8072') +
+  labs(title = "Box plot of longevity distribution in each group")
+
+# Processing thorax
+attach(fruitfly)
+refined_thorax = (thorax - mean(thorax)) / sd(thorax)
+datare_thorax = data.frame(refined_thorax)
+#plotting refined_thorax 
+ggplot(datare_thorax, aes(x = refined_thorax)) + 
+  geom_histogram(aes(y = ..density..), col = '#008080', 
+                 fill = '#9FD5D1', binwidth = 0.39) +
+  labs(title = "Hist of Refined Thorax Length in fruitfly")
+
+# Fitting the GLM
+MyFit = glm(longevity ~  refined_thorax + activity, family = Gamma(link = 'log'), 
+            data = fruitfly)
+summary(MyFit)
+
+# summary of MyFit
+knitr::kable(summary(MyFit)$coef, digits = 2, caption = 'Coefftients of Fitted GLM')
+
+shape = 1/summary(MyFit)$dispersion
+scale = exp(MyFit$coef["(Intercept)"]) / shape
+#visualization of MyFit
+ggplot(fruitfly, aes(x = longevity)) + 
+  geom_histogram(aes(y = ..density..), col = '#EB9605', fill = '#FFBF00', binwidth = 5) +
+  stat_function(fun = dgamma, args = list(shape = shape, scale = scale), col = '#813F0B') +
+  labs(title = "Hist of Longevity with fitted GLM")
+
+```
+
+
+\newpage
+# 2 \ Smoke
+## Summary
+Based on the investigation and analysis of the given data collected by American National Youth Tobacco Survey in 2014, regarding the first hypothesis, there is sufficient evidence to show that the chewing tobacco, snuff, or dip consumption of tobacco is no more common amongst Americans of European ancestry than for Hispanic-Americans and African-Americans, once one accounts for the fact that white Americans more likely to live in rural areas and chewing tobacco is a rural phenomenon.  
+
+Regarding the second hypothesis, there is sufficient evidence to conclude that the likelihood of having used a hookah or waterpipe on at least one occasion is the same for two individuals of the different sexes, provided their age, ethnicity, and other demographic characteristics are similar.
+
+## write-up
+In the recent years, smoking is gradually becoming a major concern of people's health threat within many countries, especially the US. Within all the humanbeing, youngesters' health are concerned the most. This data investigation is based on a smoke data published by American National Youth Tobacco Survey in 2014. and we made two hypothesises to check whether they are true or not. 
+
+The first focus of our study is to examine that whether Regular use of chewing tobacco, snuff or dip is no more common amongst Americans of European ancestry than for Hispanic-Americans and African-Americans, once one accounts for the fact that white Americans more likely to live in rural areas and chewing tobacco is a rural phenomenon. 
+
+Another point of investigation is to determine The likelihood of having used a hookah or waterpipe on at least one occasion is the same for two individuals of the different sexes, provided their age, ethnicity, and other demographic characteristics are similar.  
+
+Hypothesis I is tested by fitting a binomial (logistic) model. According to what we have learned in the lecture, binomial model with link = 'logit' is the go to when it comes to investigating 'yes' or 'no' data. 
+$$y = \beta_0 + \beta _ 1x_{Age} + \beta_2I_{Male} + \beta_3I_{Black} + \beta_4I_{Hips} + \beta_5I_{Asian}+\beta_6I_{Native} + \beta_7I_{Pacific} + \beta_8I_{Rural}$$
+Hypothesis II is tested by a similar method of fitting a logistic model. Notice that for the second hypothesis,the exponential of the coefficients of PipeFit shows that older teenagers are more likely to use Hookah than those younger kids. The rank of most likely to use Hookah based on race is Hispanic, white, black. Moreover, people in the cities are more likely to use Hookahs. This could coincide with that mose Hookah stores are located in the more developed areas instead of rural area.  
+
+## Appendix
+### Data exploration
+```{r, echo=TRUE, warning=FALSE}
+#Loading/Downloading smoke.RData
+dataDir = "../HW1"
+smokeFile = file.path(dataDir, "smoke.RData")
+if (! file.exists(smokeFile)) {
+  download.file("http://pbrown.ca/teaching/appliedstats/data/smoke.RData",
+                smokeFile)
+  }
+(load(smokeFile))
+
+# Explore smoke.RData
+knitr::kable(smoke[1:12, 
+                   c('Age', 'Sex', 'Grade', 'RuralUrban', 'Race', 
+                     'chewing_tobacco_snuff_or')], digits = 2, caption = "Abstract of smoke.RData")
+
+# Indexing the column investigated in smokeFormat dataframe
+smokeFormats[smokeFormats$colName == 'chewing_tobacco_snuff_or',]
+# Relabelling the investigated column
+smoke$everSmoke = factor(smoke$chewing_tobacco_snuff_or, levels = 
+                           c('TRUE', 'FALSE'), labels = c('Yes', 'No'))
+#looking at the age ~ grade distribution of subjects
+knitr::kable(table(smoke$Grade, smoke$Age, exclude = NULL),
+                  caption = "Grade vs Age Distributino Table", digits = 2)
+#Looking at the Race ~ everSmoke density of subjects
+knitr::kable(table(smoke$Race, smoke$everSmoke, exclude= NULL), 
+             caption = "Race vs Smoke Experience Distribution Table", digits = 2)
+```
+
+### Code for Hypothesis I
+```{r, echo = T}
+# Removing 9 years old because their data is suspicious
+# smokeSub = smoke[smoke$Age >= 10, ]
+smokeSub = smoke[smoke$Age >= 10 & !is.na(smoke$Race) & 
+                   !is.na(smoke$chewing_tobacco_snuff_or), ]
+smokeAgg_chew = reshape2::dcast(smokeSub, Age + Sex + Race + 
+                             RuralUrban ~ chewing_tobacco_snuff_or, length)
+smokeAgg_chew = na.omit(smokeAgg_chew)
+smokeAgg_chew$Age = smokeAgg_chew$Age - mean(smokeAgg_chew$Age)
+
+colnames(smokeAgg_chew)[colnames(smokeAgg_chew) == "FALSE"] = "no"
+colnames(smokeAgg_chew)[colnames(smokeAgg_chew) == "TRUE"] = "yes"
+
+#select the white
+smokeAgg_chew[which (smokeAgg_chew$Race == 'white' & 
+                       smokeAgg_chew$Sex == "M" &
+                       smokeAgg_chew$RuralUrban == 'Rural'),]
+smokeAgg_chew$y = cbind(smokeAgg_chew$yes, smokeAgg_chew$no) 
+# Fit the model
+smokeFit = glm(y ~ Age + Sex + Race + RuralUrban,
+               family=binomial(link='logit'), data=smokeAgg_chew) 
+knitr::kable(summary(smokeFit)$coef, digits=4) 
+```
+
+### Code for Hypothesis II
+```{r, echo=TRUE}
+# Using similar method as the previous session
+smokeSub1 = smoke[smoke$Age >= 10 & !is.na(smoke$Race) &
+                    !is.na(smoke$ever_tobacco_hookah_or_wa), ]
+smokeAgg_pipe = reshape2::dcast(smokeSub1, Age + Sex + Race + 
+                                  RuralUrban ~ ever_tobacco_hookah_or_wa, length)
+smokeAgg_pipe = na.omit(smokeAgg_pipe)
+smokeAgg_pipe$Age = smokeAgg_pipe$Age - mean(smokeAgg_pipe$Age)
+colnames(smokeAgg_pipe)[colnames(smokeAgg_pipe) == "TRUE"] = "yes"
+colnames(smokeAgg_pipe)[colnames(smokeAgg_pipe) == "FALSE"] = "no"
+smokeAgg_pipe[which (smokeAgg_pipe$Sex == "M" & smokeAgg_pipe$RuralUrban == "Rural" &
+                     smokeAgg_pipe$Race == "black"), ]
+smokeAgg_pipe$y = cbind(smokeAgg_pipe$yes, smokeAgg_pipe$no)
+# fitting logestic model for the second hypothesis
+PipeFit = glm(y ~ Age + Sex + Race + RuralUrban, 
+              family = binomial(link = 'logit'), data = smokeAgg_pipe)
+knitr::kable(exp(summary(PipeFit)$coef), digits = 4)
+```
+

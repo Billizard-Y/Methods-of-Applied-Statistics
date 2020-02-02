@@ -12,7 +12,7 @@ library(faraway)
 library(kableExtra)
 library(ggplot2)
 ```
-# 1 \ Flies
+# 1 \ Flies 
 
 ## Short Report
 Through the investigation of the data set, we can conclude that the length of thorax of a fruitfly has effect on its lifetime. 
